@@ -66,13 +66,13 @@ int main(int argc, char **argv) {
                 0);
     printf("Accepted connection from (%s, %s)\n", hostname, port);
 
-    doit(connfd);  // 트래젝션을 수행
-    Close(connfd); // 트래젝션을 수행된 후 자신의 쪽의 연결 소켓을 닫는다.
+    doit(connfd);  // 트랜젝션을 수행
+    Close(connfd); // 트랜젝션을 수행된 후 자신의 쪽의 연결 소켓을 닫는다.
   }
 }
 
 // doit 함수 -----------------------------------------------------------------------------------------------------
-// 한개의 트래젝션을 처리해주는 함수
+// 한개의 트랜젝션을 처리해주는 함수
 
 void doit(int fd){
 
@@ -106,16 +106,18 @@ void doit(int fd){
     return;
   }
 
-  // 위에서 변수에 값이 들어온 경우
+  // 정적 컨텐츠라면
   if (is_static){
-    // 이 파일이 보통 파일인지, 읽기 권화을 가지고 있는지 검증
+    // 이 파일이 보통 파일이면서 읽기 권화을 가지고 있는지 검증
     if (!(S_ISREG(sbuf.st_mode)) || !(S_IRUSR & sbuf.st_mode)){
       clienterror(fd, filename, "403", "Forbidden", "Tiny couldn't read the file");
       return;
     }
-    // 검증이 끝나면 정적 컨테츠를 클라이언트에게 제공
+    // 검증이 끝나면 정적 컨텐- 츠를 클라이언트에게 제공
     serve_static(fd, filename, sbuf.st_size);
-  }else{
+  }
+  // 동적 컨텐츠라면
+  else{
     // 실행 가능한 파일인지 검증
     if(!(S_ISREG(sbuf.st_mode)) || !(S_IXUSR & sbuf.st_mode)){
       clienterror(fd, filename, "403", "Forbidden", "Tiny couldn't run the CGI program");
@@ -143,13 +145,13 @@ void clienterror(int fd, char *cause, char *errnum, char *shortmsg, char *longms
   // buf에 에러넘버와 메세지를 담아준다.
   sprintf(buf, "HTTP/1.0 %s %s\r\n", errnum, shortmsg);
 
-  // buf에 넣고 보내고 넣고 보내고
+  // buf를 fd로 보내고 buf에 새로운 값을 넣는다.
   Rio_writen(fd, buf, strlen(buf));
   sprintf(buf, "Content-type: text/html\r\n");
   Rio_writen(fd, buf, strlen(buf));
   sprintf(buf, "Content-length: %d\r\n\r\n", (int)strlen(body));
 
-  // sprintf로 쌓아놓은 길쭉한 배열의 길이를 보내준다.
+  // Rio_writen으로 쌓아놓은 길쭉한 배열을 fd로 보내준다.
   Rio_writen(fd, buf, strlen(buf));
   Rio_writen(fd, body, strlen(body));
 }
@@ -215,7 +217,7 @@ int parse_uri(char *uri, char *filename, char *cgiargs){
 }
 
 // get_filetype 함수 ----------------------------------------------------------------------------
-// file name에 있는 타입을 file type를 변환한다.
+// file name에 있는 타입으로 file type를 변환한다.
 
 void get_filetype(char *filename, char *filetype){
 
